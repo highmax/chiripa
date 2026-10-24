@@ -104,6 +104,7 @@ export function Sorteo() {
   function cambiarModo(m: Modo) {
     setModo(m)
     setOpciones(EJEMPLOS[m].opciones)
+    setGiros(giros.slice(0, EJEMPLOS[m].opciones.length))
     setResultado({ estado: 'listo' })
     avisar(AYUDA)
   }
@@ -140,7 +141,10 @@ export function Sorteo() {
           setResultado({
             estado: 'girando',
             registro: [...registro],
-            aviso: paso.tipo === 'reversa' ? '⇄ Reversa: gira al revés' : `${GIROS[slot.giro].etiqueta}: avanza ${GIROS[slot.giro].avance} slots`,
+            aviso:
+              paso.tipo === 'reversa'
+                ? `⇄ Reversa: gira ${paso.sentido === -1 ? 'al revés' : 'otra vez hacia adelante'}`
+                : `${GIROS[slot.giro].etiqueta}: avanza ${GIROS[slot.giro].avance} slots`,
           })
           await esperar(750)
         }
@@ -264,7 +268,7 @@ export function Sorteo() {
           <button className="btn btn--claro" type="button" disabled={ocupado} onClick={alternarMuchas}>
             {opciones.length > ejemplo.opciones.length ? `Volver a ${ejemplo.opciones.length} opciones` : 'Probar con 24 opciones'}
           </button>
-          <p className={`ayuda${ayuda.error ? ' ayuda--error' : ''}`}>{ayuda.texto}</p>
+          <p className={`ayuda${ayuda.error ? ' ayuda--error' : ''}`} role="status">{ayuda.texto}</p>
         </div>
       </div>
     </div>

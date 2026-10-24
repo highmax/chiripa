@@ -44,7 +44,8 @@ export function Tragamonedas({ slots, fuentesListas, ocupado, onJalar, ref }: Pr
       animar(paso) {
         const p = posicion.current
         if (paso.tipo === 'girar') return interpolar(p, posicionGiro(p, paso.destino, n, 3), 3800, salida, mover)
-        if (paso.tipo === 'avanzar') return interpolar(p, Math.round(p) + paso.slots, 550 + paso.slots * 170, suave, mover)
+        if (paso.tipo === 'avanzar') return interpolar(p, Math.round(p) + paso.slots, 550 + Math.abs(paso.slots) * 170, suave, mover)
+        if (paso.sentido === 1) return interpolar(p, posicionGiro(p, paso.destino, n, 2), 3200, salida, mover)
         return interpolar(p, posicionReversa(p, paso.destino, n, 2), 3200, salida, mover)
       },
       terminar: () => mover(mod(Math.round(posicion.current), n)),

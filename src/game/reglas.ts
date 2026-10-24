@@ -10,8 +10,10 @@ export type Slot =
 // Pasos que la vista tiene que animar, en orden.
 export type Paso =
   | { tipo: 'girar'; destino: number }
+  // `slots` lleva signo: negativo cuando la rueda va en reversa.
   | { tipo: 'avanzar'; slots: number; destino: number }
-  | { tipo: 'reversa'; destino: number }
+  // `sentido` es hacia dónde gira después de la Reversa: -1 al revés, 1 de nuevo hacia adelante.
+  | { tipo: 'reversa'; destino: number; sentido: 1 | -1 }
 
 export type Jugada = {
   pasos: Paso[]
@@ -35,10 +37,11 @@ export const GIROS: Record<GiroLoco, { etiqueta: string; avance?: number }> = {
 export const mod = (a: number, n: number) => ((a % n) + n) % n
 
 // Reparte los Giros Locos entre las opciones para que no queden juntos.
+// Con `ceil` siempre queda al menos una opción entre dos Giros Locos, incluso con tantos Giros como opciones.
 export function armarSlots(opciones: string[], giros: GiroLoco[]): Slot[] {
   const slots: Slot[] = opciones.map((texto, i) => ({ tipo: 'opcion', texto, color: i % TOTAL_COLORES }))
   giros.forEach((giro, k) => {
-    const pos = Math.round(((k + 1) * opciones.length) / (giros.length + 1)) + k
+    const pos = Math.ceil(((k + 1) * opciones.length) / (giros.length + 1)) + k
     slots.splice(Math.min(pos, slots.length), 0, { tipo: 'giro', giro })
   })
   return slots
@@ -60,17 +63,19 @@ export function resolverJugada(slots: Slot[], azar: () => number = Math.random):
   const alAzar = () => Math.floor(azar() * n) % n
   let actual = alAzar()
   const pasos: Paso[] = [{ tipo: 'girar', destino: actual }]
+  let sentido: 1 | -1 = 1
 
   for (let cadena = 0; cadena < MAX_CADENA; cadena++) {
     const slot = slots[actual]
     if (slot.tipo === 'opcion') return { pasos, ganador: actual }
     const avance = GIROS[slot.giro].avance
     if (avance) {
-      actual = mod(actual + avance, n)
-      pasos.push({ tipo: 'avanzar', slots: avance, destino: actual })
+      actual = mod(actual + sentido * avance, n)
+      pasos.push({ tipo: 'avanzar', slots: sentido * avance, destino: actual })
     } else {
+      sentido = sentido === 1 ? -1 : 1
       actual = alAzar()
-      pasos.push({ tipo: 'reversa', destino: actual })
+      pasos.push({ tipo: 'reversa', destino: actual, sentido })
     }
   }
   return { pasos, ganador: slots[actual].tipo === 'opcion' ? actual : null }

@@ -32,7 +32,8 @@ export function Rueda({ slots, fuentesListas, ref }: Props) {
       animar(paso) {
         const r = rotacion.current
         if (paso.tipo === 'girar') return interpolar(r, rotacionGiro(r, paso.destino, n, 5, Math.random()), 4200, salida, rotar)
-        if (paso.tipo === 'avanzar') return interpolar(r, r + (paso.slots * 360) / n, 600 + paso.slots * 180, suave, rotar)
+        if (paso.tipo === 'avanzar') return interpolar(r, r + (paso.slots * 360) / n, 600 + Math.abs(paso.slots) * 180, suave, rotar)
+        if (paso.sentido === 1) return interpolar(r, rotacionGiro(r, paso.destino, n, 2, Math.random()), 3200, salida, rotar)
         return interpolar(r, rotacionReversa(r, paso.destino, n, 2, Math.random()), 3200, salida, rotar)
       },
       terminar: () => rotar(mod(rotacion.current, 360)),

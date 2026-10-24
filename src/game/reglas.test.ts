@@ -27,6 +27,13 @@ describe('armarSlots', () => {
     expect(posiciones).toEqual([2, 5])
   })
 
+  it('deja una opción entre dos Giros Locos aunque haya tantos Giros como opciones', () => {
+    const slots = armarSlots(['A', 'B', 'C', 'D', 'E', 'F'], ['mas2', 'mas4', 'reversa', 'mas2', 'mas4', 'reversa'])
+    slots.forEach((s, i) => {
+      if (s.tipo === 'giro') expect(slots[(i + 1) % slots.length].tipo).toBe('opcion')
+    })
+  })
+
   it('asigna colores cíclicos por opción', () => {
     const slots = armarSlots(['A', 'B', 'C', 'D', 'E', 'F', 'G'], [])
     expect(slots.map((s) => s.tipo === 'opcion' && s.color)).toEqual([0, 1, 2, 3, 4, 5, 0])
@@ -80,9 +87,37 @@ describe('resolverJugada', () => {
     expect(jugada.pasos).toEqual([
       { tipo: 'girar', destino: 0 },
       { tipo: 'avanzar', slots: 4, destino: 4 },
-      { tipo: 'reversa', destino: 5 },
+      { tipo: 'reversa', destino: 5, sentido: -1 },
     ])
     expect(jugada.ganador).toBe(5)
+  })
+
+  it('después de una Reversa, +2 avanza en el sentido contrario', () => {
+    const slots: Slot[] = [
+      opcion('A'),
+      { tipo: 'giro', giro: 'reversa' },
+      opcion('B'),
+      opcion('C'),
+      { tipo: 'giro', giro: 'mas2' },
+      opcion('D'),
+    ]
+    const jugada = resolverJugada(slots, secuencia(azarPara(1, 6), azarPara(4, 6)))
+    expect(jugada.pasos).toEqual([
+      { tipo: 'girar', destino: 1 },
+      { tipo: 'reversa', destino: 4, sentido: -1 },
+      { tipo: 'avanzar', slots: -2, destino: 2 },
+    ])
+    expect(jugada.ganador).toBe(2)
+  })
+
+  it('una segunda Reversa vuelve a girar hacia adelante', () => {
+    const slots: Slot[] = [{ tipo: 'giro', giro: 'reversa' }, opcion('A'), { tipo: 'giro', giro: 'reversa' }, opcion('B')]
+    const jugada = resolverJugada(slots, secuencia(azarPara(0, 4), azarPara(2, 4), azarPara(3, 4)))
+    expect(jugada.pasos.slice(1)).toEqual([
+      { tipo: 'reversa', destino: 2, sentido: -1 },
+      { tipo: 'reversa', destino: 3, sentido: 1 },
+    ])
+    expect(jugada.ganador).toBe(3)
   })
 
   it(`se detiene tras ${MAX_CADENA} Giros Locos seguidos sin ganador`, () => {
