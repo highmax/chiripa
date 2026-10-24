@@ -1,5 +1,3 @@
-const TIPOS = ['Participantes', 'Premios', 'Items', 'Tareas', 'Lo que sea']
-
 export function ComoFunciona() {
   return (
     <header className="hero" id="inicio">
@@ -28,9 +26,7 @@ export function ComoFunciona() {
                 Agrega una por una o pega una lista separada por comas. Cada opción se vuelve un slot. Con más de 16
                 slots, la rueda se convierte en una tragamonedas con palanca.
               </p>
-              <div className="tipos">
-                {TIPOS.map((t) => <span key={t}>{t}</span>)}
-              </div>
+              <p className="tipos">Sirve para participantes, premios, items, tareas o lo que sea.</p>
             </div>
           </li>
           <li className="paso">
@@ -44,7 +40,7 @@ export function ComoFunciona() {
               <div className="mini-giros">
                 <span>+2</span>
                 <span>+4</span>
-                <span>REVERSA</span>
+                <span>Reversa</span>
               </div>
             </div>
           </li>
