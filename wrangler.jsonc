@@ -1,0 +1,8 @@
+// Configuración de Cloudflare Workers: Chiripa se sirve como sitio estático desde dist/.
+{
+  "name": "chiripa",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist"
+  }
+}

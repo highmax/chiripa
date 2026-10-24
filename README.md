@@ -43,6 +43,7 @@ Configuración del build en Cloudflare:
 | Output / assets directory | `dist` |
 | Production branch | `main` |
 
+- `wrangler.jsonc` le dice a Cloudflare que publique `dist/` como assets estáticos (lo usan tanto `main` como las previews de los PR).
 - La versión de Node la fija `.node-version` (22), que Cloudflare lee al construir.
 - `public/_headers` define la caché de los archivos con hash y algunas cabeceras de seguridad; Cloudflare lo aplica tanto en Workers como en Pages.
 - Es una sola página sin rutas, así que no hace falta configurar un fallback de SPA.
