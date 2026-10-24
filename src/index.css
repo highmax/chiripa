@@ -273,6 +273,15 @@ body {
 .sorteo__panel .btn--grande { width: 100%; }
 .panel__grupo { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .panel__titulo { font-family: var(--f-label); font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--lila-claro); }
+.panel__fila { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.limpiar { font-family: var(--f-label); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; background: transparent; color: var(--fucsia-claro); border: 2px solid var(--fucsia-claro); padding: 3px 8px; cursor: pointer; }
+.limpiar:hover:not(:disabled) { background: var(--fucsia); border-color: var(--fucsia); color: var(--blanco); }
+.limpiar:disabled { opacity: .55; cursor: not-allowed; }
+.confirmar { background: var(--tinta); border: 3px solid var(--amarillo); padding: 10px 12px; display: grid; gap: 10px; }
+.confirmar p { margin: 0; font-size: 14px; font-weight: 600; color: var(--amarillo); }
+.confirmar__botones { display: flex; flex-wrap: wrap; gap: 8px; }
+.confirmar .btn { font-size: 11.5px; padding: 6px 10px; box-shadow: 3px 3px 0 var(--fucsia); }
+.confirmar .btn--peligro { border-color: var(--blanco); box-shadow: 3px 3px 0 var(--amarillo); }
 .pestanas { display: flex; flex-wrap: wrap; gap: 6px; }
 .pestana { font-family: var(--f-label); font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; background: transparent; color: var(--lila-claro); border: 2px solid #8C6BC4; padding: 5px 10px; cursor: pointer; }
 .pestana[aria-pressed="true"] { background: var(--amarillo); color: var(--tinta); border-color: var(--amarillo); }

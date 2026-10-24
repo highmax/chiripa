@@ -50,8 +50,10 @@ export function Sorteo() {
   const [ayuda, setAyuda] = useState({ texto: AYUDA, error: false })
   const [resultado, setResultado] = useState<Resultado>({ estado: 'listo' })
   const [fuentesListas, setFuentesListas] = useState(false)
+  const [confirmarLimpieza, setConfirmarLimpieza] = useState(false)
 
   const animador = useRef<Animador>(null)
+  const entrada = useRef<HTMLInputElement>(null)
   const confeti = useRef<ConfetiHandle>(null)
 
   const slots = useMemo(() => armarSlots(opciones, giros), [opciones, giros])
@@ -95,6 +97,15 @@ export function Sorteo() {
     avisar(AYUDA)
   }
 
+  function limpiarLista() {
+    setOpciones([])
+    setGiros([])
+    setResultado({ estado: 'listo' })
+    setConfirmarLimpieza(false)
+    avisar('Lista vacía. Agrega al menos 2 opciones para girar.')
+    entrada.current?.focus()
+  }
+
   function agregarGiro(giro: GiroLoco) {
     const motivo = motivoSinGiro(opciones.length, giros.length)
     if (motivo) return avisar(motivo, true)
@@ -102,6 +113,7 @@ export function Sorteo() {
   }
 
   function cambiarModo(m: Modo) {
+    setConfirmarLimpieza(false)
     setModo(m)
     setOpciones(EJEMPLOS[m].opciones)
     setGiros(giros.slice(0, EJEMPLOS[m].opciones.length))
@@ -110,6 +122,7 @@ export function Sorteo() {
   }
 
   function alternarMuchas() {
+    setConfirmarLimpieza(false)
     setResultado({ estado: 'listo' })
     if (opciones.length > ejemplo.opciones.length) {
       setOpciones(ejemplo.opciones)
@@ -221,9 +234,33 @@ export function Sorteo() {
         </div>
 
         <div className="panel__grupo">
-          <label className="panel__titulo" htmlFor="nueva-opcion">Agrega opciones</label>
+          <div className="panel__fila">
+            <label className="panel__titulo" htmlFor="nueva-opcion">Agrega opciones</label>
+            {opciones.length > 0 && !confirmarLimpieza && (
+              <button type="button" className="limpiar" disabled={ocupado} onClick={() => setConfirmarLimpieza(true)}>
+                Limpiar lista
+              </button>
+            )}
+          </div>
+          {confirmarLimpieza && (
+            <div className="confirmar" role="alertdialog" aria-labelledby="confirmar-texto">
+              <p id="confirmar-texto">
+                ¿Borrar {opciones.length === 1 ? 'la opción' : `las ${opciones.length} opciones`}
+                {giros.length > 0 && ' y los Giros Locos'}? No se puede deshacer.
+              </p>
+              <div className="confirmar__botones">
+                <button type="button" className="btn btn--peligro" disabled={ocupado} onClick={limpiarLista} autoFocus>
+                  Sí, borrar todo
+                </button>
+                <button type="button" className="btn btn--claro" onClick={() => setConfirmarLimpieza(false)}>
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
           <form className="agregar" onSubmit={agregar}>
             <input
+              ref={entrada}
               id="nueva-opcion"
               type="text"
               autoComplete="off"
