@@ -8,6 +8,7 @@ const CARTAS = [
     id: 'G1',
     simbolo: '+2',
     color: 'var(--fucsia)',
+    tintaSimbolo: 'var(--tinta)',
     rol: 'El empujón',
     nombre: '+2',
     texto: 'La rueda avanza 2 slots más en el mismo sentido. Lo que estaba a punto de ganar se queda con las ganas.',
@@ -18,6 +19,7 @@ const CARTAS = [
     id: 'G2',
     simbolo: '+4',
     color: 'var(--morado)',
+    tintaSimbolo: 'var(--blanco)',
     rol: 'El turbo',
     nombre: '+4',
     texto: 'Avanza 4 slots más. Con ruedas pequeñas casi da media vuelta, y puede caer en otro Giro Loco.',
@@ -28,6 +30,7 @@ const CARTAS = [
     id: 'G3',
     simbolo: '⇄',
     color: 'var(--menta)',
+    tintaSimbolo: 'var(--tinta)',
     rol: 'La vuelta',
     nombre: 'Reversa',
     texto: 'La rueda vuelve a girar, ahora en sentido contrario, y cae donde caiga. El resultado empieza de cero.',
@@ -48,7 +51,7 @@ export function GirosLocos() {
   return (
     <section className="bloque cielo" id="giros-locos" aria-labelledby="giros-titulo">
       <Sprite {...ESTRELLA} className="estrella" style={{ left: '6%', top: 38 }} />
-      <Sprite {...ESTRELLA} className="estrella" style={{ right: '9%', top: 70 }} />
+      <Sprite {...ESTRELLA} className="estrella" style={{ right: '9%', top: 24 }} />
       <Sprite {...ESTRELLA} className="estrella estrella--chica" style={{ right: '32%', top: 22 }} />
       <div className="cabeza">
         <h2 id="giros-titulo">Los Giros Locos</h2>
@@ -62,7 +65,7 @@ export function GirosLocos() {
           <article className="carta" key={c.id}>
             <div className="carta__arte">
               <span className="carta__id">{c.id}</span>
-              <div className="uno" style={{ '--c': c.color } as CSSProperties}>
+              <div className="uno" style={{ '--c': c.color, '--c-texto': c.tintaSimbolo } as CSSProperties}>
                 <small>{c.simbolo}</small>
                 <b>{c.simbolo}</b>
               </div>

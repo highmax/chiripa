@@ -294,6 +294,12 @@ export function Sorteo() {
                 if (e.key === 'Escape') {
                   e.preventDefault()
                   cancelarLimpieza()
+                } else if (e.key === 'Tab') {
+                  // Tab queda entre los dos botones mientras se confirma.
+                  const botones = [...e.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')]
+                  const i = botones.indexOf(document.activeElement as HTMLButtonElement)
+                  e.preventDefault()
+                  botones[(i + (e.shiftKey ? -1 : 1) + botones.length) % botones.length]?.focus()
                 }
               }}
             >
