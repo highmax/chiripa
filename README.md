@@ -30,3 +30,22 @@ npm run build    # build de producción en dist/
 - `src/components/Rueda.tsx` y `Tragamonedas.tsx`: las dos vistas; animan los pasos que devuelve `resolverJugada`.
 - `src/components/Sorteo.tsx`: estado del sorteo y panel de opciones.
 - `src/index.css`: paleta pixel/arcade (fucsia, morado, amarillo, menta, celeste) y estilos.
+
+## Publicar en Cloudflare
+
+Chiripa está publicada en Cloudflare Workers (sitio estático), conectada a este repo: https://chiripa.alejandronavarrodimas.workers.dev/. Cada push a `main` vuelve a construir y publicar.
+
+Configuración del build en Cloudflare:
+
+| Campo | Valor |
+| --- | --- |
+| Build command | `npm run build` |
+| Output / assets directory | `dist` |
+| Production branch | `main` |
+
+- `wrangler.jsonc` le dice a Cloudflare que publique `dist/` como assets estáticos (lo usan tanto `main` como las previews de los PR).
+- La versión de Node la fija `.node-version` (22), que Cloudflare lee al construir.
+- `public/_headers` define la caché de los archivos con hash y algunas cabeceras de seguridad; Cloudflare lo aplica tanto en Workers como en Pages.
+- Es una sola página sin rutas, así que no hace falta configurar un fallback de SPA.
+
+Para un proyecto nuevo en la misma cuenta: **Workers & Pages → Create → Import a repository**, elige el repo y usa la misma configuración de build.
