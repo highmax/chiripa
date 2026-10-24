@@ -7,7 +7,7 @@ export const BLANCO = '#FFFFFF'
 
 // [fondo, texto] por color de opción.
 export const PALETA_SLOTS: [string, string][] = [
-  ['#FF2E93', BLANCO],
+  ['#FF2E93', TINTA],
   [AMARILLO, TINTA],
   ['#7B2FF7', BLANCO],
   ['#7CF2B0', TINTA],
@@ -15,4 +15,4 @@ export const PALETA_SLOTS: [string, string][] = [
   ['#FF8FC7', TINTA],
 ]
 
-export const FUENTE_PIXEL = '"Pixelify Sans", ui-monospace, monospace'
+export const FUENTE_PIXEL = '"Jersey 15", ui-monospace, monospace'

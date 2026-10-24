@@ -4,6 +4,7 @@ import { GIROS, mod, type Slot } from '../game/reglas'
 import { esperar, interpolar, salida, suave } from '../game/animacion'
 import { AMARILLO, FUENTE_PIXEL, PALETA_SLOTS, TINTA, UVA, UVA_CLARA } from '../game/colores'
 import type { Animador } from './animador'
+import { useEscala } from './escala'
 
 const ANCHO = 800
 const ALTO = 300
@@ -22,15 +23,16 @@ export function Tragamonedas({ slots, fuentesListas, ocupado, onJalar, ref }: Pr
   const lienzo = useRef<HTMLCanvasElement>(null)
   const posicion = useRef(0)
   const [tirada, setTirada] = useState(false)
+  const escala = useEscala(lienzo, ANCHO, CUADRO)
   const n = slots.length
 
   const mover = useCallback(
     (p: number) => {
       posicion.current = p
       const ctx = lienzo.current?.getContext('2d')
-      if (ctx) dibujar(ctx, slots, p)
+      if (ctx) dibujar(ctx, slots, p, escala)
     },
-    [slots],
+    [slots, escala],
   )
 
   useImperativeHandle(
@@ -69,8 +71,8 @@ export function Tragamonedas({ slots, fuentesListas, ocupado, onJalar, ref }: Pr
           <span className="flecha flecha--izq" />
           <canvas
             ref={lienzo}
-            width={ANCHO}
-            height={ALTO}
+            width={Math.round(ANCHO * escala)}
+            height={Math.round(ALTO * escala)}
             role="img"
             aria-label={`Carrete de la tragamonedas con ${n} slots`}
           />
@@ -90,8 +92,9 @@ export function Tragamonedas({ slots, fuentesListas, ocupado, onJalar, ref }: Pr
   )
 }
 
-function dibujar(ctx: CanvasRenderingContext2D, slots: Slot[], posicion: number) {
+function dibujar(ctx: CanvasRenderingContext2D, slots: Slot[], posicion: number, escala: number) {
   const n = slots.length
+  ctx.setTransform(escala, 0, 0, escala, 0, 0)
   ctx.fillStyle = '#FFFFFF'
   ctx.fillRect(0, 0, ANCHO, ALTO)
   if (!n) return
@@ -109,14 +112,14 @@ function dibujar(ctx: CanvasRenderingContext2D, slots: Slot[], posicion: number)
           ctx.fillStyle = ((cx + cy) / CUADRO) % 2 ? UVA : UVA_CLARA
           ctx.fillRect(cx, y + cy, CUADRO, CUADRO)
         }
-      ctx.font = `700 50px ${FUENTE_PIXEL}`
+      ctx.font = `700 60px ${FUENTE_PIXEL}`
       ctx.fillStyle = AMARILLO
-      ctx.fillText(slot.giro === 'reversa' ? '⇄ REVERSA' : GIROS[slot.giro].etiqueta, ANCHO / 2, y + FILA / 2 + 2)
+      ctx.fillText(slot.giro === 'reversa' ? '⇄ Reversa' : GIROS[slot.giro].etiqueta, ANCHO / 2, y + FILA / 2 + 2)
     } else {
       const [fondo, texto] = PALETA_SLOTS[slot.color]
       ctx.fillStyle = fondo
       ctx.fillRect(0, y, ANCHO, FILA)
-      ctx.font = `700 52px ${FUENTE_PIXEL}`
+      ctx.font = `700 62px ${FUENTE_PIXEL}`
       ctx.fillStyle = texto
       ctx.fillText(slot.texto.length > 20 ? slot.texto.slice(0, 19) + '…' : slot.texto, ANCHO / 2, y + FILA / 2 + 2)
     }

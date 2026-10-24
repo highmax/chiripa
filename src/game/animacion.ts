@@ -21,4 +21,5 @@ export function interpolar(desde: number, hasta: number, ms: number, curva: (t: 
   })
 }
 
-export const esperar = (ms: number) => new Promise<void>((r) => setTimeout(r, reducirMovimiento() ? 0 : ms))
+// Las pausas se mantienen aunque se reduzca el movimiento: así cada Giro Loco se alcanza a leer.
+export const esperar = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))

@@ -20,23 +20,40 @@ const CLAVE = 'chiripa:sorteo'
 const GIROS_INICIALES: GiroLoco[] = ['mas2', 'reversa']
 const AYUDA = 'Hasta 16 slots se juega en la rueda; desde 17 aparece la tragamonedas. Los Giros Locos se reparten entre las opciones.'
 
-type Guardado = { modo: Modo; opciones: string[]; giros: GiroLoco[] }
+type Lista = { opciones: string[]; giros: GiroLoco[] }
+type Listas = Partial<Record<Modo, Lista>>
+// Cada modo guarda su propia lista, así cambiar de pestaña no borra la que escribiste.
+type Guardado = { modo: Modo; listas: Listas }
 type Resultado =
   | { estado: 'listo' }
   | { estado: 'girando'; registro: string[]; aviso?: string }
   | { estado: 'ganador'; registro: string[]; texto: string }
   | { estado: 'caos'; registro: string[] }
 
+const listaEjemplo = (m: Modo): Lista => ({ opciones: EJEMPLOS[m].opciones, giros: GIROS_INICIALES })
+
+function validarLista(l: Partial<Lista> | undefined): Lista | null {
+  if (!l || !Array.isArray(l.opciones) || !Array.isArray(l.giros)) return null
+  return { opciones: l.opciones.map(String), giros: l.giros.filter((x) => x in GIROS) }
+}
+
 function leerGuardado(): Guardado {
   try {
-    const g = JSON.parse(localStorage.getItem(CLAVE) ?? 'null') as Guardado | null
-    if (g && MODOS.includes(g.modo) && Array.isArray(g.opciones) && Array.isArray(g.giros)) {
-      return { modo: g.modo, opciones: g.opciones.map(String), giros: g.giros.filter((x) => x in GIROS) }
+    const g = JSON.parse(localStorage.getItem(CLAVE) ?? 'null') as (Guardado & Partial<Lista>) | null
+    if (g && MODOS.includes(g.modo)) {
+      // La versión anterior guardaba una sola lista, la del modo activo.
+      const fuente: Record<string, Partial<Lista> | undefined> = g.listas ?? { [g.modo]: g }
+      const listas: Listas = {}
+      for (const m of MODOS) {
+        const l = validarLista(fuente[m])
+        if (l) listas[m] = l
+      }
+      return { modo: g.modo, listas }
     }
   } catch {
     // Sin almacenamiento disponible: se usan los ejemplos.
   }
-  return { modo: 'participantes', opciones: EJEMPLOS.participantes.opciones, giros: GIROS_INICIALES }
+  return { modo: 'participantes', listas: {} }
 }
 
 const etiquetaPaso = (paso: Paso, giro: GiroLoco) => (paso.tipo === 'reversa' ? '⇄ REVERSA' : GIROS[giro].etiqueta)
@@ -44,8 +61,11 @@ const etiquetaPaso = (paso: Paso, giro: GiroLoco) => (paso.tipo === 'reversa' ? 
 export function Sorteo() {
   const [inicial] = useState(leerGuardado)
   const [modo, setModo] = useState<Modo>(inicial.modo)
-  const [opciones, setOpciones] = useState<string[]>(inicial.opciones)
-  const [giros, setGiros] = useState<GiroLoco[]>(inicial.giros)
+  const [listas, setListas] = useState<Listas>(inicial.listas)
+  const [opciones, setOpciones] = useState<string[]>(() => (inicial.listas[inicial.modo] ?? listaEjemplo(inicial.modo)).opciones)
+  const [giros, setGiros] = useState<GiroLoco[]>(() => (inicial.listas[inicial.modo] ?? listaEjemplo(inicial.modo)).giros)
+  // Lista que había antes de "Probar con 24 opciones", por modo, para poder volver a ella.
+  const [antes, setAntes] = useState<Listas>({})
   const [texto, setTexto] = useState('')
   const [ayuda, setAyuda] = useState({ texto: AYUDA, error: false })
   const [resultado, setResultado] = useState<Resultado>({ estado: 'listo' })
@@ -54,12 +74,15 @@ export function Sorteo() {
 
   const animador = useRef<Animador>(null)
   const entrada = useRef<HTMLInputElement>(null)
+  const botonLimpiar = useRef<HTMLButtonElement>(null)
+  const devolverFoco = useRef(false)
   const confeti = useRef<ConfetiHandle>(null)
 
   const slots = useMemo(() => armarSlots(opciones, giros), [opciones, giros])
   const vista = vistaPara(slots.length)
   const ocupado = resultado.estado === 'girando'
   const ejemplo = EJEMPLOS[modo]
+  const previa = antes[modo]
 
   useEffect(() => {
     document.fonts?.ready.then(() => setFuentesListas(true))
@@ -67,11 +90,20 @@ export function Sorteo() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(CLAVE, JSON.stringify({ modo, opciones, giros }))
+      const guardado: Guardado = { modo, listas: { ...listas, [modo]: { opciones, giros } } }
+      localStorage.setItem(CLAVE, JSON.stringify(guardado))
     } catch {
       // Guardar es solo una comodidad.
     }
-  }, [modo, opciones, giros])
+  }, [modo, listas, opciones, giros])
+
+  useEffect(() => {
+    // Al cancelar la confirmación, el foco vuelve a "Limpiar lista".
+    if (!confirmarLimpieza && devolverFoco.current) {
+      devolverFoco.current = false
+      botonLimpiar.current?.focus()
+    }
+  }, [confirmarLimpieza])
 
   const avisar = (texto: string, error = false) => setAyuda({ texto, error })
 
@@ -97,6 +129,11 @@ export function Sorteo() {
     avisar(AYUDA)
   }
 
+  function cancelarLimpieza() {
+    devolverFoco.current = true
+    setConfirmarLimpieza(false)
+  }
+
   function limpiarLista() {
     setOpciones([])
     setGiros([])
@@ -113,10 +150,14 @@ export function Sorteo() {
   }
 
   function cambiarModo(m: Modo) {
+    if (m === modo) return
+    const guardadas = { ...listas, [modo]: { opciones, giros } }
+    const siguiente = guardadas[m] ?? listaEjemplo(m)
     setConfirmarLimpieza(false)
+    setListas(guardadas)
     setModo(m)
-    setOpciones(EJEMPLOS[m].opciones)
-    setGiros(giros.slice(0, EJEMPLOS[m].opciones.length))
+    setOpciones(siguiente.opciones)
+    setGiros(siguiente.giros)
     setResultado({ estado: 'listo' })
     avisar(AYUDA)
   }
@@ -124,11 +165,13 @@ export function Sorteo() {
   function alternarMuchas() {
     setConfirmarLimpieza(false)
     setResultado({ estado: 'listo' })
-    if (opciones.length > ejemplo.opciones.length) {
-      setOpciones(ejemplo.opciones)
-      setGiros(GIROS_INICIALES)
+    if (previa) {
+      setOpciones(previa.opciones)
+      setGiros(previa.giros)
+      setAntes({ ...antes, [modo]: undefined })
       avisar(AYUDA)
     } else {
+      setAntes({ ...antes, [modo]: { opciones, giros } })
       setOpciones([...ejemplo.opciones, ...ejemplo.extra])
       setGiros(['mas2', 'mas4', 'reversa', 'mas2'])
       avisar('24 opciones y 4 Giros Locos: ya no caben en la rueda, así que aparece la tragamonedas.')
@@ -237,22 +280,32 @@ export function Sorteo() {
           <div className="panel__fila">
             <label className="panel__titulo" htmlFor="nueva-opcion">Agrega opciones</label>
             {opciones.length > 0 && !confirmarLimpieza && (
-              <button type="button" className="limpiar" disabled={ocupado} onClick={() => setConfirmarLimpieza(true)}>
+              <button ref={botonLimpiar} type="button" className="limpiar" disabled={ocupado} onClick={() => setConfirmarLimpieza(true)}>
                 Limpiar lista
               </button>
             )}
           </div>
           {confirmarLimpieza && (
-            <div className="confirmar" role="alertdialog" aria-labelledby="confirmar-texto">
+            <div
+              className="confirmar"
+              role="alertdialog"
+              aria-labelledby="confirmar-texto"
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  e.preventDefault()
+                  cancelarLimpieza()
+                }
+              }}
+            >
               <p id="confirmar-texto">
                 ¿Borrar {opciones.length === 1 ? 'la opción' : `las ${opciones.length} opciones`}
                 {giros.length > 0 && ' y los Giros Locos'}? No se puede deshacer.
               </p>
               <div className="confirmar__botones">
-                <button type="button" className="btn btn--peligro" disabled={ocupado} onClick={limpiarLista} autoFocus>
+                <button type="button" className="btn btn--peligro" disabled={ocupado} onClick={limpiarLista}>
                   Sí, borrar todo
                 </button>
-                <button type="button" className="btn btn--claro" onClick={() => setConfirmarLimpieza(false)}>
+                <button type="button" className="btn btn--claro" onClick={cancelarLimpieza} autoFocus>
                   Cancelar
                 </button>
               </div>
@@ -281,11 +334,18 @@ export function Sorteo() {
         </div>
 
         <div className="panel__grupo">
-          <div className="panel__titulo">Giros Locos</div>
+          <div className="panel__titulo">Suma Giros Locos</div>
           <div className="giros">
             {(Object.keys(GIROS) as GiroLoco[]).map((g) => (
-              <button key={g} type="button" className="btn btn--giro" disabled={ocupado} onClick={() => agregarGiro(g)}>
-                + {GIROS[g].etiqueta}
+              <button
+                key={g}
+                type="button"
+                className="btn btn--giro"
+                aria-label={`Sumar Giro Loco ${GIROS[g].etiqueta}`}
+                disabled={ocupado}
+                onClick={() => agregarGiro(g)}
+              >
+                {GIROS[g].etiqueta}
               </button>
             ))}
           </div>
@@ -303,7 +363,7 @@ export function Sorteo() {
 
         <div className="panel__pie">
           <button className="btn btn--claro" type="button" disabled={ocupado} onClick={alternarMuchas}>
-            {opciones.length > ejemplo.opciones.length ? `Volver a ${ejemplo.opciones.length} opciones` : 'Probar con 24 opciones'}
+            {previa ? `Volver a tu lista (${previa.opciones.length})` : 'Probar con 24 opciones'}
           </button>
           <p className={`ayuda${ayuda.error ? ' ayuda--error' : ''}`} role="status">{ayuda.texto}</p>
         </div>

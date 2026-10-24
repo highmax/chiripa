@@ -6,6 +6,7 @@ import { AMARILLO, BLANCO, FUENTE_PIXEL, PALETA_SLOTS, TINTA, UVA, UVA_CLARA } f
 import { Sprite } from './Sprite'
 import { PUNTERO } from '../data/sprites'
 import type { Animador } from './animador'
+import { useEscala } from './escala'
 
 const LADO = 560
 const CENTRO = LADO / 2
@@ -18,6 +19,7 @@ type Props = { slots: Slot[]; fuentesListas: boolean; ref?: Ref<Animador> }
 export function Rueda({ slots, fuentesListas, ref }: Props) {
   const lienzo = useRef<HTMLCanvasElement>(null)
   const rotacion = useRef(0)
+  const escala = useEscala(lienzo, LADO, PIXEL)
   const n = slots.length
 
   const rotar = useCallback((grados: number) => {
@@ -43,16 +45,16 @@ export function Rueda({ slots, fuentesListas, ref }: Props) {
 
   useEffect(() => {
     const ctx = lienzo.current?.getContext('2d')
-    if (ctx) dibujar(ctx, slots)
-  }, [slots, fuentesListas])
+    if (ctx) dibujar(ctx, slots, escala)
+  }, [slots, fuentesListas, escala])
 
   return (
     <div className="rueda">
       <Sprite {...PUNTERO} className="rueda__puntero" />
       <canvas
         ref={lienzo}
-        width={LADO}
-        height={LADO}
+        width={Math.round(LADO * escala)}
+        height={Math.round(LADO * escala)}
         className="rueda__lienzo"
         role="img"
         aria-label={`Rueda con ${n} slots`}
@@ -62,9 +64,10 @@ export function Rueda({ slots, fuentesListas, ref }: Props) {
 }
 
 // La rueda se dibuja en bloques de PIXEL×PIXEL para el look pixel art.
-function dibujar(ctx: CanvasRenderingContext2D, slots: Slot[]) {
+function dibujar(ctx: CanvasRenderingContext2D, slots: Slot[], escala: number) {
   const n = Math.max(slots.length, 1)
   const seg = 360 / n
+  ctx.setTransform(escala, 0, 0, escala, 0, 0)
   ctx.clearRect(0, 0, LADO, LADO)
 
   for (let y = 0; y < LADO; y += PIXEL) {
@@ -86,7 +89,7 @@ function dibujar(ctx: CanvasRenderingContext2D, slots: Slot[]) {
     ctx.fillRect(fx, fy, PIXEL * 1.5, PIXEL * 1.5)
   }
 
-  const tamano = n > 12 ? 19 : n > 8 ? 23 : 27
+  const tamano = n > 12 ? 23 : n > 8 ? 28 : 33
   const borde = RADIO - 4.5 * PIXEL
   slots.forEach((slot, i) => {
     // Ángulo horario del centro del slot (los slots avanzan en sentido antihorario).
@@ -101,7 +104,7 @@ function dibujar(ctx: CanvasRenderingContext2D, slots: Slot[]) {
     if (slot.tipo === 'giro') {
       ctx.font = `700 ${tamano + 6}px ${FUENTE_PIXEL}`
       ctx.fillStyle = AMARILLO
-      ctx.fillText(slot.giro === 'reversa' ? '⇄ REV' : GIROS[slot.giro].etiqueta, x, 0)
+      ctx.fillText(slot.giro === 'reversa' ? '⇄ Rev' : GIROS[slot.giro].etiqueta, x, 0)
     } else {
       ctx.font = `700 ${tamano}px ${FUENTE_PIXEL}`
       ctx.fillStyle = PALETA_SLOTS[slot.color][1]
